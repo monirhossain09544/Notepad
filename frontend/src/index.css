@@ -1,0 +1,464 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --font-ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system,
+            sans-serif;
+        --font-editor: "Fraunces", ui-serif, Georgia, serif;
+        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+        --background: 36 33% 98%;
+        --foreground: 222 22% 12%;
+
+        --surface-1: 0 0% 100%;
+        --surface-2: 36 25% 96%;
+        --surface-3: 36 18% 93%;
+
+        --card: var(--surface-1);
+        --card-foreground: var(--foreground);
+
+        --popover: 36 33% 99%;
+        --popover-foreground: var(--foreground);
+
+        --muted: 36 18% 94%;
+        --muted-foreground: 222 10% 42%;
+
+        --border: 30 14% 86%;
+        --input: 30 14% 86%;
+
+        --primary: 222 22% 12%;
+        --primary-foreground: 36 33% 98%;
+
+        --secondary: 36 18% 94%;
+        --secondary-foreground: 222 22% 12%;
+
+        --accent: 186 52% 40%;
+        --accent-foreground: 0 0% 100%;
+
+        --ring: 186 52% 40%;
+
+        --link: 186 60% 34%;
+        --link-hover: 186 70% 28%;
+
+        --highlight: 44 92% 85%;
+        --highlight-foreground: 222 22% 12%;
+
+        --code-bg: 36 22% 94%;
+        --code-fg: 222 22% 12%;
+
+        --destructive: 0 72% 45%;
+        --destructive-foreground: 0 0% 100%;
+
+        --shadow-color: 222 22% 12%;
+
+        --radius: 0.875rem;
+        --radius-sm: 10px;
+        --radius-md: 14px;
+        --radius-lg: 18px;
+
+        --shadow-sm: 0 1px 0 hsl(var(--shadow-color) / 0.04),
+            0 8px 24px hsl(var(--shadow-color) / 0.06);
+        --shadow-md: 0 2px 0 hsl(var(--shadow-color) / 0.05),
+            0 18px 50px hsl(var(--shadow-color) / 0.1);
+
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+        --dur-1: 120ms;
+        --dur-2: 180ms;
+        --dur-3: 240ms;
+    }
+
+    .dark {
+        --background: 222 22% 8%;
+        --foreground: 36 33% 96%;
+
+        --surface-1: 222 20% 10%;
+        --surface-2: 222 18% 12%;
+        --surface-3: 222 16% 15%;
+
+        --card: var(--surface-2);
+        --card-foreground: var(--foreground);
+
+        --popover: 222 18% 12%;
+        --popover-foreground: var(--foreground);
+
+        --muted: 222 16% 15%;
+        --muted-foreground: 36 10% 70%;
+
+        --border: 222 14% 20%;
+        --input: 222 14% 20%;
+
+        --primary: 36 33% 96%;
+        --primary-foreground: 222 22% 8%;
+
+        --secondary: 222 16% 15%;
+        --secondary-foreground: 36 33% 96%;
+
+        --accent: 186 52% 46%;
+        --accent-foreground: 222 22% 8%;
+
+        --ring: 186 52% 46%;
+
+        --link: 186 70% 62%;
+        --link-hover: 186 80% 70%;
+
+        --highlight: 44 70% 34%;
+        --highlight-foreground: 36 33% 96%;
+
+        --code-bg: 222 18% 14%;
+        --code-fg: 36 33% 96%;
+
+        --destructive: 0 62% 48%;
+        --destructive-foreground: 0 0% 100%;
+
+        --shadow-color: 0 0% 0%;
+        --shadow-sm: 0 1px 0 hsl(var(--shadow-color) / 0.25),
+            0 10px 30px hsl(var(--shadow-color) / 0.35);
+        --shadow-md: 0 2px 0 hsl(var(--shadow-color) / 0.28),
+            0 22px 70px hsl(var(--shadow-color) / 0.45);
+    }
+
+    * {
+        @apply border-border;
+    }
+
+    html,
+    body,
+    #root {
+        height: 100%;
+    }
+
+    body {
+        margin: 0;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: var(--font-ui);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::selection {
+        background-color: hsl(var(--accent) / 0.22);
+        color: hsl(var(--foreground));
+    }
+
+    code,
+    kbd,
+    pre {
+        font-family: var(--font-mono);
+    }
+}
+
+/* ---------------------------------------------------------------- scrollbars */
+.thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+.thin-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+    background-clip: content-box;
+}
+
+/* ------------------------------------------------------------ paper backdrop */
+.paper-wash {
+    background-image: radial-gradient(
+            900px 240px at 18% 0%,
+            hsl(186 52% 92% / 0.85),
+            transparent 62%
+        ),
+        radial-gradient(
+            700px 220px at 82% 6%,
+            hsl(44 92% 92% / 0.7),
+            transparent 58%
+        );
+}
+.dark .paper-wash {
+    background-image: radial-gradient(
+            900px 240px at 18% 0%,
+            hsl(186 52% 22% / 0.35),
+            transparent 62%
+        ),
+        radial-gradient(
+            700px 220px at 82% 6%,
+            hsl(44 70% 20% / 0.25),
+            transparent 58%
+        );
+}
+
+.grain::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    opacity: 0.035;
+}
+.dark .grain::before {
+    mix-blend-mode: screen;
+    opacity: 0.05;
+}
+
+/* ------------------------------------------------------------- editor typography */
+.tiptap,
+.note-prose {
+    font-family: var(--font-editor);
+    font-size: 16px;
+    line-height: 1.75;
+    letter-spacing: -0.005em;
+    color: hsl(var(--foreground));
+}
+@media (min-width: 1024px) {
+    .tiptap,
+    .note-prose {
+        font-size: 17px;
+    }
+}
+.note-prose {
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.tiptap:focus,
+.tiptap:focus-visible {
+    outline: none;
+}
+
+.tiptap > *:first-child,
+.note-prose > *:first-child {
+    margin-top: 0;
+}
+
+.tiptap h1,
+.note-prose h1 {
+    font-size: 2rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    margin: 1.6rem 0 0.6rem;
+}
+.tiptap h2,
+.note-prose h2 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+    margin: 1.4rem 0 0.5rem;
+}
+.tiptap h3,
+.note-prose h3 {
+    font-size: 1.2rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    margin: 1.2rem 0 0.4rem;
+}
+.tiptap p,
+.note-prose p {
+    margin: 0.75rem 0;
+}
+.tiptap ul,
+.tiptap ol,
+.note-prose ul,
+.note-prose ol {
+    margin: 0.75rem 0;
+    padding-left: 1.4rem;
+}
+.tiptap ul,
+.note-prose ul {
+    list-style: disc;
+}
+.tiptap ol,
+.note-prose ol {
+    list-style: decimal;
+}
+.tiptap li,
+.note-prose li {
+    margin: 0.25rem 0;
+}
+.tiptap li p,
+.note-prose li p {
+    margin: 0;
+}
+.tiptap a,
+.note-prose a {
+    color: hsl(var(--link));
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+}
+.tiptap a:hover,
+.note-prose a:hover {
+    color: hsl(var(--link-hover));
+}
+.tiptap mark,
+.note-prose mark {
+    background-color: hsl(var(--highlight));
+    color: hsl(var(--highlight-foreground));
+    border-radius: 4px;
+    padding: 0 0.25rem;
+}
+.tiptap code,
+.note-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background-color: hsl(var(--code-bg));
+    color: hsl(var(--code-fg));
+    padding: 0.12rem 0.35rem;
+    border-radius: 6px;
+}
+.tiptap pre,
+.note-prose pre {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background-color: hsl(var(--code-bg));
+    color: hsl(var(--code-fg));
+    border: 1px solid hsl(var(--border));
+    border-radius: 14px;
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+}
+.tiptap pre code,
+.note-prose pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+}
+.tiptap blockquote,
+.note-prose blockquote {
+    border-left: 2px solid hsl(var(--accent) / 0.6);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+}
+.tiptap hr,
+.note-prose hr {
+    margin: 1.75rem 0;
+    border: 0;
+    border-top: 1px solid hsl(var(--border));
+}
+
+.tiptap ul[data-type="taskList"],
+.note-prose ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0.15rem;
+}
+.tiptap ul[data-type="taskList"] li,
+.note-prose ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+.tiptap ul[data-type="taskList"] li > label,
+.note-prose ul[data-type="taskList"] li > label {
+    margin-top: 0.45rem;
+    flex-shrink: 0;
+    user-select: none;
+}
+.tiptap ul[data-type="taskList"] li > div,
+.note-prose ul[data-type="taskList"] li > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.tiptap ul[data-type="taskList"] input[type="checkbox"],
+.note-prose ul[data-type="taskList"] input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 6px;
+    border: 1.5px solid hsl(var(--border));
+    background-color: hsl(var(--surface-1));
+    cursor: pointer;
+    position: relative;
+    transition:
+        background-color var(--dur-1) var(--ease-out),
+        border-color var(--dur-1) var(--ease-out);
+}
+.tiptap ul[data-type="taskList"] input[type="checkbox"]:checked,
+.note-prose ul[data-type="taskList"] input[type="checkbox"]:checked {
+    background-color: hsl(var(--accent));
+    border-color: hsl(var(--accent));
+}
+.tiptap ul[data-type="taskList"] input[type="checkbox"]:checked::after,
+.note-prose ul[data-type="taskList"] input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid hsl(var(--accent-foreground));
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.tiptap li[data-checked="true"] > div,
+.note-prose li[data-checked="true"] > div {
+    color: hsl(var(--muted-foreground));
+    text-decoration: line-through;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.75;
+}
+
+.search-hit {
+    background-color: hsl(var(--highlight));
+    color: hsl(var(--highlight-foreground));
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+@keyframes pulse-dot {
+    0%,
+    80%,
+    100% {
+        opacity: 0.25;
+    }
+    40% {
+        opacity: 1;
+    }
+}
+.dot-1 {
+    animation: pulse-dot 1.2s infinite;
+}
+.dot-2 {
+    animation: pulse-dot 1.2s 0.15s infinite;
+}
+.dot-3 {
+    animation: pulse-dot 1.2s 0.3s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}
