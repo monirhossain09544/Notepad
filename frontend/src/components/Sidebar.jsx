@@ -2,11 +2,9 @@ import React, { useState } from "react";
 import { useTheme } from "next-themes";
 import {
     Archive,
-    BarChart3,
     Check,
     FileText,
     FolderClosed,
-    Keyboard,
     Moon,
     MoreHorizontal,
     NotebookPen,
@@ -27,6 +25,7 @@ import {
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { ShortcutsButton, StatsPopover } from "./Dialogs";
 import { useApp } from "../context/AppContext";
 import { TAG_COLORS } from "../lib/constants";
 import { modKey } from "../lib/format";
@@ -85,10 +84,9 @@ export const Sidebar = ({ onNavigate }) => {
         updateTag,
         deleteTag,
         setPaletteOpen,
-        setShortcutsOpen,
-        setStatsOpen,
     } = useApp();
     const { theme, setTheme } = useTheme();
+    const mode = theme === "dark" ? "dark" : "light";
 
     const [folderDraft, setFolderDraft] = useState(null);
     const [tagDraft, setTagDraft] = useState(null);
@@ -425,39 +423,45 @@ export const Sidebar = ({ onNavigate }) => {
             </div>
 
             <div className="border-t border-border bg-[hsl(var(--surface-2))] p-3">
-                <div className="flex items-center gap-1.5">
-                    <button
-                        type="button"
+                <div className="flex items-center gap-1 rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] p-1.5">
+                    <StatsPopover />
+                    <ShortcutsButton />
+                    <div
+                        role="group"
+                        aria-label="Colour theme"
+                        data-mode={mode}
                         data-testid="theme-toggle"
-                        aria-label="Toggle theme"
-                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                        className="flex flex-1 items-center gap-2 rounded-[10px] border border-border bg-[hsl(var(--surface-1))] px-3 py-2 text-xs text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-3))]"
+                        className="np-seg relative ml-auto flex items-center rounded-[10px] bg-[hsl(var(--surface-2))] p-[3px]"
                     >
-                        {theme === "dark" ? (
-                            <Moon className="h-3.5 w-3.5" />
-                        ) : (
+                        <button
+                            type="button"
+                            aria-label="Light theme"
+                            aria-pressed={mode === "light"}
+                            data-testid="theme-light-btn"
+                            onClick={() => setTheme("light")}
+                            className={`relative z-10 grid h-[26px] w-[30px] place-items-center rounded-[8px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--surface-1))] ${
+                                mode === "light"
+                                    ? "text-foreground"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
                             <Sun className="h-3.5 w-3.5" />
-                        )}
-                        {theme === "dark" ? "Dark" : "Light"}
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="Writing stats"
-                        data-testid="open-stats-btn"
-                        onClick={() => setStatsOpen(true)}
-                        className="rounded-[10px] border border-border bg-[hsl(var(--surface-1))] p-2 text-muted-foreground transition-colors duration-150 hover:text-foreground"
-                    >
-                        <BarChart3 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="Keyboard shortcuts"
-                        data-testid="open-shortcuts-btn"
-                        onClick={() => setShortcutsOpen(true)}
-                        className="rounded-[10px] border border-border bg-[hsl(var(--surface-1))] p-2 text-muted-foreground transition-colors duration-150 hover:text-foreground"
-                    >
-                        <Keyboard className="h-3.5 w-3.5" />
-                    </button>
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Dark theme"
+                            aria-pressed={mode === "dark"}
+                            data-testid="theme-dark-btn"
+                            onClick={() => setTheme("dark")}
+                            className={`relative z-10 grid h-[26px] w-[30px] place-items-center rounded-[8px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--surface-1))] ${
+                                mode === "dark"
+                                    ? "text-foreground"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <Moon className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -433,6 +433,64 @@
     padding: 0 2px;
 }
 
+/* ------------------------------------------- segmented theme control (thumb) */
+.np-seg::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    bottom: 3px;
+    width: 30px;
+    border-radius: 8px;
+    background: hsl(var(--surface-1));
+    box-shadow:
+        0 1px 0 hsl(var(--border)),
+        0 4px 12px hsl(var(--shadow-color) / 0.1);
+    transform: translateX(var(--np-seg-x, 0px));
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        background-color var(--dur-2) var(--ease-out);
+}
+.np-seg[data-mode="dark"] {
+    --np-seg-x: 30px;
+}
+.dark .np-seg::before {
+    background: hsl(var(--surface-3));
+    box-shadow:
+        0 1px 0 hsl(var(--border)),
+        0 6px 16px hsl(var(--shadow-color) / 0.4);
+}
+
+/* ------------------------------------------------ assistant thinking scanline */
+.np-scanline {
+    position: relative;
+    overflow: hidden;
+}
+.np-scanline::after {
+    content: "";
+    position: absolute;
+    left: -35%;
+    top: 0;
+    height: 2px;
+    width: 35%;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        hsl(var(--accent) / 0.65),
+        transparent
+    );
+    animation: np-scan 1.5s var(--ease-out) infinite;
+}
+@keyframes np-scan {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(390%);
+    }
+}
+
 @keyframes pulse-dot {
     0%,
     80%,

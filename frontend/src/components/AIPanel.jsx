@@ -1,24 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ArrowRight,
+    ArrowUp,
     Check,
-    CornerDownLeft,
+    ChevronRight,
     Copy,
+    CornerDownLeft,
     Eraser,
-    ListChecks,
-    ListTree,
+    Heading1,
     Loader2,
+    ListTodo,
     PenLine,
-    RefreshCw,
+    RotateCcw,
     Sparkles,
-    Tags,
-    Type,
+    Tag as TagIcon,
+    TextQuote,
     Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Skeleton } from "./ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
     Select,
     SelectContent,
@@ -31,31 +32,66 @@ import { api, errorMessage } from "../lib/api";
 import { TONES } from "../lib/constants";
 import { bulletsToHtml, copyText, itemsToTaskHtml, noteTitle } from "../lib/format";
 
-const QUICK_ACTIONS = [
-    { key: "title", label: "Suggest title", Icon: Type },
-    { key: "summarize", label: "Summarise", Icon: ListTree },
-    { key: "improve", label: "Improve writing", Icon: Wand2 },
-    { key: "continue", label: "Continue writing", Icon: PenLine },
-    { key: "action-items", label: "Action items", Icon: ListChecks },
-    { key: "suggest-tags", label: "Suggest tags", Icon: Tags },
+const GROUPS = [
+    {
+        label: "Rewrite",
+        tone: true,
+        items: [
+            { key: "improve", label: "Improve writing", Icon: Wand2 },
+            { key: "continue", label: "Continue writing", Icon: PenLine },
+        ],
+    },
+    {
+        label: "Extract",
+        items: [
+            { key: "summarize", label: "Summarise", Icon: TextQuote },
+            { key: "action-items", label: "Pull out action items", Icon: ListTodo },
+        ],
+    },
+    {
+        label: "Organise",
+        items: [
+            { key: "title", label: "Suggest a title", Icon: Heading1 },
+            { key: "suggest-tags", label: "Suggest tags", Icon: TagIcon },
+        ],
+    },
 ];
 
-const Thinking = () => (
-    <div className="rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] p-3">
-        <p role="status" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Sparkles className="mr-1 h-3.5 w-3.5 text-[hsl(var(--accent))]" /> Thinking
-            <span className="dot-1">.</span>
-            <span className="dot-2">.</span>
-            <span className="dot-3">.</span>
-        </p>
-        <Skeleton className="mt-3 h-3 w-full" />
-        <Skeleton className="mt-2 h-3 w-4/5" />
-        <Skeleton className="mt-2 h-3 w-2/3" />
+const IconAction = ({ label, onClick, children }) => (
+    <Tooltip>
+        <TooltipTrigger asChild>
+            <button
+                type="button"
+                aria-label={label}
+                onClick={onClick}
+                className="grid h-7 w-7 place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-2))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]"
+            >
+                {children}
+            </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs">
+            {label}
+        </TooltipContent>
+    </Tooltip>
+);
+
+const quietBtn =
+    "inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-border bg-[hsl(var(--surface-2))] px-2.5 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]";
+
+const accentBtn =
+    "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-[hsl(var(--accent))] px-2.5 text-xs font-medium text-[hsl(var(--accent-foreground))] transition-colors duration-150 hover:bg-[hsl(var(--accent)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]";
+
+const Rail = ({ children, className = "", ...rest }) => (
+    <div
+        className={`relative rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--surface-1))] px-4 py-3 shadow-[var(--shadow-sm)] before:absolute before:bottom-3 before:left-0 before:top-3 before:w-[2px] before:rounded-full before:bg-[hsl(var(--accent)/0.6)] ${className}`}
+        {...rest}
+    >
+        {children}
     </div>
 );
 
 export const AIPanel = () => {
-    const { activeNote, editorRef, flushSave, updateActive, ensureTag, setNoteTags, tags } = useApp();
+    const { activeNote, editorRef, flushSave, updateActive, ensureTag, setNoteTags } = useApp();
 
     const [busy, setBusy] = useState(null);
     const [result, setResult] = useState(null);
@@ -78,7 +114,7 @@ export const AIPanel = () => {
                     setMessages(history.map((m) => ({ role: m.role, content: m.content })));
                 }
             } catch {
-                /* chat history is best effort */
+                /* history is best effort */
             }
         })();
         return () => {
@@ -220,44 +256,51 @@ export const AIPanel = () => {
 
     if (!activeNote) return null;
 
+    const thinking = Boolean(busy);
+
     const renderResult = () => {
         if (!result) return null;
         const { action, data } = result;
+        const retry = () => runAction(action, action === "tone" ? { tone } : {});
 
         if (action === "title") {
             return (
-                <div
-                    className="rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] p-3 shadow-[var(--shadow-sm)]"
-                    data-testid="ai-result-title"
-                >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                        Suggested title
-                    </p>
-                    <p className="mt-2 text-base font-semibold" style={{ fontFamily: "var(--font-editor)" }}>
+                <Rail className="pr-16" data-testid="ai-result-title">
+                    <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                        <IconAction
+                            label="Copy title"
+                            onClick={async () => {
+                                await copyText(data.title || "");
+                                toast.success("Copied");
+                            }}
+                        >
+                            <Copy className="h-3.5 w-3.5" />
+                        </IconAction>
+                        <IconAction label="Try again" onClick={retry}>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                        </IconAction>
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground">Suggested title</p>
+                    <p
+                        className="mt-2 text-[17px] font-semibold leading-snug tracking-[-0.01em]"
+                        style={{ fontFamily: "var(--font-editor)" }}
+                    >
                         {data.title}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        <Button
-                            size="sm"
+                    <div className="mt-3">
+                        <button
+                            type="button"
                             data-testid="ai-apply-title-btn"
+                            className={accentBtn}
                             onClick={() => {
                                 updateActive({ title: data.title }, { immediate: true });
                                 toast.success("Title applied");
                             }}
-                            className="h-8 rounded-[10px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
                         >
-                            <Check className="mr-1.5 h-3.5 w-3.5" /> Use this title
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => runAction("title")}
-                            className="h-8 rounded-[10px]"
-                        >
-                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Try again
-                        </Button>
+                            <Check className="h-3.5 w-3.5" /> Use this title
+                        </button>
                     </div>
-                </div>
+                </Rail>
             );
         }
 
@@ -265,30 +308,42 @@ export const AIPanel = () => {
             const items = action === "summarize" ? data.bullets || [] : data.items || [];
             const heading = action === "summarize" ? "Summary" : "Action items";
             return (
-                <div
-                    className="rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] p-3 shadow-[var(--shadow-sm)]"
-                    data-testid={`ai-result-${action}`}
-                >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                        {heading}
-                    </p>
+                <Rail className="pr-16" data-testid={`ai-result-${action}`}>
+                    <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                        <IconAction
+                            label="Copy"
+                            onClick={async () => {
+                                await copyText(items.map((i) => `- ${i}`).join("\n"));
+                                toast.success("Copied");
+                            }}
+                        >
+                            <Copy className="h-3.5 w-3.5" />
+                        </IconAction>
+                        <IconAction label="Try again" onClick={retry}>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                        </IconAction>
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground">{heading}</p>
                     {items.length === 0 ? (
-                        <p className="mt-2 text-sm text-muted-foreground">Nothing found in this note yet.</p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Nothing to pull out of this note yet.
+                        </p>
                     ) : (
                         <ul className="mt-2 space-y-1.5">
                             {items.map((item, i) => (
-                                <li key={i} className="flex gap-2 text-sm leading-relaxed">
-                                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--accent))]" />
+                                <li key={i} className="flex gap-2.5 text-sm leading-relaxed">
+                                    <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-[hsl(var(--accent))]" />
                                     <span>{item}</span>
                                 </li>
                             ))}
                         </ul>
                     )}
                     {items.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            <Button
-                                size="sm"
+                        <div className="mt-3">
+                            <button
+                                type="button"
                                 data-testid={`ai-insert-${action}-btn`}
+                                className={accentBtn}
                                 onClick={() =>
                                     insertAtEnd(
                                         action === "summarize"
@@ -296,38 +351,26 @@ export const AIPanel = () => {
                                             : itemsToTaskHtml(items, heading),
                                     )
                                 }
-                                className="h-8 rounded-[10px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
                             >
-                                <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
-                                {action === "summarize" ? "Insert summary" : "Insert checklist"}
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={async () => {
-                                    await copyText(items.map((i) => `- ${i}`).join("\n"));
-                                    toast.success("Copied");
-                                }}
-                                className="h-8 rounded-[10px]"
-                            >
-                                <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
-                            </Button>
+                                <CornerDownLeft className="h-3.5 w-3.5" />
+                                {action === "summarize" ? "Add to note" : "Add as checklist"}
+                            </button>
                         </div>
                     )}
-                </div>
+                </Rail>
             );
         }
 
         if (action === "suggest-tags") {
             const suggested = data.tags || [];
             return (
-                <div
-                    className="rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] p-3 shadow-[var(--shadow-sm)]"
-                    data-testid="ai-result-suggest-tags"
-                >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                        Suggested tags
-                    </p>
+                <Rail className="pr-16" data-testid="ai-result-suggest-tags">
+                    <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                        <IconAction label="Try again" onClick={retry}>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                        </IconAction>
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground">Suggested tags</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                         {suggested.map((name) => (
                             <button
@@ -336,21 +379,23 @@ export const AIPanel = () => {
                                 onClick={() => applyTags([name])}
                                 className="rounded-full border border-border bg-[hsl(var(--surface-2))] px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-[hsl(var(--surface-3))]"
                             >
-                                #{name}
+                                {name}
                             </button>
                         ))}
                     </div>
                     {suggested.length > 0 && (
-                        <Button
-                            size="sm"
-                            data-testid="ai-apply-tags-btn"
-                            onClick={() => applyTags(suggested)}
-                            className="mt-3 h-8 rounded-[10px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
-                        >
-                            <Check className="mr-1.5 h-3.5 w-3.5" /> Add all tags
-                        </Button>
+                        <div className="mt-3">
+                            <button
+                                type="button"
+                                data-testid="ai-apply-tags-btn"
+                                className={accentBtn}
+                                onClick={() => applyTags(suggested)}
+                            >
+                                <Check className="h-3.5 w-3.5" /> Add them all
+                            </button>
+                        </div>
                     )}
-                </div>
+                </Rail>
             );
         }
 
@@ -359,186 +404,233 @@ export const AIPanel = () => {
         const label = isContinue
             ? "Suggested continuation"
             : action === "tone"
-              ? `Rewritten in a ${data.tone || tone} tone`
+              ? `Rewritten · ${data.tone || tone}`
               : "Improved draft";
         return (
-            <div
-                className="rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] p-3 shadow-[var(--shadow-sm)]"
-                data-testid={`ai-result-${action}`}
-            >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    {label}
-                </p>
+            <Rail className="pr-16" data-testid={`ai-result-${action}`}>
+                <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                    <IconAction label="Try again" onClick={retry}>
+                        <RotateCcw className="h-3.5 w-3.5" />
+                    </IconAction>
+                </div>
+                <p className="text-xs font-medium text-muted-foreground">{label}</p>
                 <div
-                    className="note-prose thin-scroll mt-2 max-h-64 overflow-y-auto rounded-[10px] bg-[hsl(var(--surface-2))] p-3"
+                    className="note-prose thin-scroll mt-2 max-h-60 overflow-y-auto pr-1"
                     dangerouslySetInnerHTML={{ __html: html }}
                 />
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                     {isContinue ? (
-                        <Button
-                            size="sm"
+                        <button
+                            type="button"
                             data-testid="ai-insert-continue-btn"
+                            className={accentBtn}
                             onClick={() => insertAtEnd(html)}
-                            className="h-8 rounded-[10px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
                         >
-                            <ArrowRight className="mr-1.5 h-3.5 w-3.5" /> Add to note
-                        </Button>
+                            <CornerDownLeft className="h-3.5 w-3.5" /> Add to note
+                        </button>
                     ) : (
                         <>
-                            <Button
-                                size="sm"
+                            <button
+                                type="button"
                                 data-testid="ai-replace-note-btn"
+                                className={accentBtn}
                                 onClick={() => replaceAll(html)}
-                                className="h-8 rounded-[10px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
                             >
-                                <Check className="mr-1.5 h-3.5 w-3.5" /> Replace note
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="secondary"
+                                <Check className="h-3.5 w-3.5" /> Replace note
+                            </button>
+                            <button
+                                type="button"
+                                className={quietBtn}
                                 onClick={() => insertAtEnd(html)}
-                                className="h-8 rounded-[10px]"
                             >
                                 Append instead
-                            </Button>
+                            </button>
                         </>
                     )}
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => runAction(action, action === "tone" ? { tone } : {})}
-                        className="h-8 rounded-[10px]"
-                    >
-                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry
-                    </Button>
                 </div>
-            </div>
+            </Rail>
         );
     };
 
     return (
         <div className="flex h-full min-h-0 flex-col bg-popover text-popover-foreground">
-            <div className="flex items-start justify-between gap-3 border-b border-border bg-popover px-4 py-3.5 pr-12">
+            <div className="flex items-center justify-between gap-3 border-b border-border bg-[hsl(var(--surface-2))] px-4 py-3 pr-12">
                 <div className="min-w-0">
-                    <p className="flex items-center gap-2 text-sm font-semibold">
-                        <Sparkles className="h-4 w-4 text-[hsl(var(--accent))]" /> AI assistant
-                    </p>
+                    <p className="text-sm font-medium">Assistant</p>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        Working on “{noteTitle(activeNote)}”
+                        {noteTitle(activeNote)}
                     </p>
                 </div>
+                <span
+                    role="status"
+                    className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                    <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                            thinking || streaming
+                                ? "animate-pulse bg-[hsl(var(--accent))]"
+                                : "bg-[hsl(var(--muted-foreground)/0.45)]"
+                        }`}
+                    />
+                    {thinking || streaming ? "Thinking" : "Ready"}
+                </span>
             </div>
 
-            <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
-                <div className="grid grid-cols-2 gap-2">
-                    {QUICK_ACTIONS.map(({ key, label: actionLabel, Icon }) => (
-                        <button
-                            key={key}
-                            type="button"
-                            disabled={Boolean(busy)}
-                            data-testid={`ai-action-${key}`}
-                            onClick={() => runAction(key)}
-                            className="flex items-center gap-2 rounded-[12px] border border-border bg-[hsl(var(--surface-1))] px-3 py-2.5 text-left text-xs font-medium transition-colors duration-200 hover:bg-[hsl(var(--surface-2))] disabled:opacity-50"
-                        >
-                            {busy === key ? (
-                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[hsl(var(--accent))]" />
-                            ) : (
-                                <Icon className="h-3.5 w-3.5 shrink-0 text-[hsl(var(--accent))]" />
-                            )}
-                            <span className="truncate">{actionLabel}</span>
-                        </button>
-                    ))}
+            <div className="thin-scroll min-h-0 flex-1 overflow-y-auto">
+                <div className="px-4 pt-4">
+                    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--surface-1))] py-1.5 shadow-[var(--shadow-sm)]">
+                        {GROUPS.map((group) => (
+                            <div key={group.label} className="pb-1">
+                                <p className="px-3.5 pb-1 pt-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                                    {group.label}
+                                </p>
+                                {group.items.map(({ key, label, Icon }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        disabled={thinking}
+                                        data-testid={`ai-action-${key}`}
+                                        onClick={() => runAction(key)}
+                                        className="group mx-1.5 flex w-[calc(100%-12px)] items-center gap-3 rounded-[12px] px-2 py-2 text-left text-sm transition-colors duration-150 hover:bg-[hsl(var(--surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--surface-1))] disabled:opacity-50"
+                                    >
+                                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[hsl(var(--accent)/0.12)] text-[hsl(var(--accent))]">
+                                            {busy === key ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Icon className="h-4 w-4" />
+                                            )}
+                                        </span>
+                                        <span className="min-w-0 flex-1 truncate">{label}</span>
+                                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+                                    </button>
+                                ))}
+                                {group.tone && (
+                                    <div className="mx-1.5 mt-1 flex items-center gap-2 rounded-[12px] bg-[hsl(var(--surface-2))] px-2 py-1.5">
+                                        <span className="pl-1 text-xs text-muted-foreground">
+                                            Tone
+                                        </span>
+                                        <Select value={tone} onValueChange={setTone}>
+                                            <SelectTrigger
+                                                className="h-7 flex-1 rounded-[9px] border-border bg-[hsl(var(--surface-1))] text-xs"
+                                                data-testid="ai-tone-select"
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-popover">
+                                                {TONES.map((t) => (
+                                                    <SelectItem
+                                                        key={t.value}
+                                                        value={t.value}
+                                                        className="text-xs"
+                                                    >
+                                                        {t.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <button
+                                            type="button"
+                                            disabled={thinking}
+                                            data-testid="ai-action-tone"
+                                            onClick={() => runAction("tone", { tone })}
+                                            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[9px] border border-border bg-[hsl(var(--surface-1))] px-2 text-xs font-medium transition-colors duration-150 hover:bg-[hsl(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] disabled:opacity-50"
+                                        >
+                                            {busy === "tone" ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                            ) : (
+                                                <Wand2 className="h-3 w-3" />
+                                            )}
+                                            Rewrite
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="mt-2 flex items-center gap-2">
-                    <Select value={tone} onValueChange={setTone}>
-                        <SelectTrigger
-                            className="h-9 flex-1 rounded-[12px] border-border bg-[hsl(var(--surface-1))] text-xs"
-                            data-testid="ai-tone-select"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover">
-                            {TONES.map((t) => (
-                                <SelectItem key={t.value} value={t.value} className="text-xs">
-                                    {t.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={Boolean(busy)}
-                        data-testid="ai-action-tone"
-                        onClick={() => runAction("tone", { tone })}
-                        className="h-9 rounded-[12px] text-xs"
-                    >
-                        {busy === "tone" ? (
-                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                            <Wand2 className="mr-1.5 h-3.5 w-3.5" />
-                        )}
-                        Rewrite tone
-                    </Button>
-                </div>
-
-                <div className="mt-4">
-                    {busy ? (
-                        <Thinking />
+                <div className="px-4 pt-3">
+                    {thinking ? (
+                        <Rail className="np-scanline">
+                            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                <Sparkles className="mr-1 h-3.5 w-3.5 text-[hsl(var(--accent))]" />
+                                Reading your note
+                                <span className="dot-1">.</span>
+                                <span className="dot-2">.</span>
+                                <span className="dot-3">.</span>
+                            </p>
+                            <div className="mt-2.5 space-y-2">
+                                <span className="block h-2 w-full rounded-full bg-[hsl(var(--surface-3))]" />
+                                <span className="block h-2 w-4/5 rounded-full bg-[hsl(var(--surface-3))]" />
+                                <span className="block h-2 w-2/3 rounded-full bg-[hsl(var(--surface-3))]" />
+                            </div>
+                        </Rail>
                     ) : (
                         renderResult() || (
-                            <p className="rounded-[var(--radius-md)] border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-                                Pick an action above, or ask a question about this note below.
-                            </p>
+                            <div className="rounded-[var(--radius-lg)] border border-dashed border-border px-4 py-4">
+                                <p className="text-sm font-medium">Assistant, on standby</p>
+                                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                    Run an action above, or ask anything about this note — answers
+                                    only ever use what is written here.
+                                </p>
+                            </div>
                         )
                     )}
                 </div>
 
-                <div className="mt-6">
-                    <div className="flex items-center justify-between pb-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                            Ask about this note
+                <div className="px-4 pb-5 pt-5">
+                    <div className="flex items-center justify-between pb-1">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                            Conversation
                         </p>
                         {messages.length > 0 && (
                             <button
                                 type="button"
                                 onClick={clearChat}
                                 data-testid="ai-clear-chat-btn"
-                                className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                                className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
                             >
                                 <Eraser className="h-3 w-3" /> Clear
                             </button>
                         )}
                     </div>
-                    <div className="space-y-2" data-testid="ai-chat-thread">
+                    <div data-testid="ai-chat-thread">
                         {messages.length === 0 && !streaming && (
-                            <p className="text-xs text-muted-foreground">
-                                Try “what did I decide here?” or “list the open questions”.
+                            <p className="pt-1 text-xs text-muted-foreground">
+                                Nothing asked yet. Try “what did I decide here?”
                             </p>
                         )}
-                        {messages.map((m, i) => (
-                            <div
-                                key={i}
-                                className={`max-w-[92%] whitespace-pre-wrap rounded-[12px] px-3 py-2 text-sm leading-relaxed ${
-                                    m.role === "user"
-                                        ? "ml-auto bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
-                                        : "bg-[hsl(var(--surface-2))] text-foreground"
-                                }`}
-                            >
-                                {m.content}
-                            </div>
-                        ))}
+                        {messages.map((m, i) =>
+                            m.role === "user" ? (
+                                <div
+                                    key={i}
+                                    className="ml-auto mt-3 max-w-[86%] rounded-[14px] border border-border bg-[hsl(var(--surface-2))] px-3 py-2 text-sm text-foreground"
+                                >
+                                    {m.content}
+                                </div>
+                            ) : (
+                                <Rail key={i} className="mt-3">
+                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                                        {m.content}
+                                    </p>
+                                </Rail>
+                            ),
+                        )}
                         {streaming && (
-                            <div className="max-w-[92%] whitespace-pre-wrap rounded-[12px] bg-[hsl(var(--surface-2))] px-3 py-2 text-sm leading-relaxed">
-                                {streamText || (
-                                    <span className="text-muted-foreground">
-                                        Reading your note<span className="dot-1">.</span>
+                            <Rail className={`mt-3 ${streamText ? "" : "np-scanline"}`}>
+                                {streamText ? (
+                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                                        {streamText}
+                                    </p>
+                                ) : (
+                                    <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                                        Looking through the note
+                                        <span className="dot-1">.</span>
                                         <span className="dot-2">.</span>
                                         <span className="dot-3">.</span>
-                                    </span>
+                                    </p>
                                 )}
-                            </div>
+                            </Rail>
                         )}
                         <div ref={chatEndRef} />
                     </div>
@@ -549,27 +641,30 @@ export const AIPanel = () => {
                 <div className="flex items-center gap-2">
                     <Input
                         value={question}
-                        placeholder="Ask anything about this note…"
+                        placeholder="Ask about this note…"
                         data-testid="ai-question-input"
                         disabled={streaming}
                         onChange={(e) => setQuestion(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && ask()}
-                        className="h-10 rounded-[12px] bg-[hsl(var(--surface-1))] text-sm"
+                        className="h-11 rounded-[14px] border-border bg-[hsl(var(--surface-1))] text-sm shadow-[inset_0_1px_0_hsl(var(--border))]"
                     />
                     <Button
                         onClick={ask}
                         disabled={streaming || !question.trim()}
                         aria-label="Send question"
                         data-testid="ai-ask-btn"
-                        className="h-10 w-10 shrink-0 rounded-[12px] bg-[hsl(var(--accent))] p-0 text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
+                        className="h-11 w-11 shrink-0 rounded-[14px] bg-[hsl(var(--accent))] p-0 text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
                     >
                         {streaming ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                            <CornerDownLeft className="h-4 w-4" />
+                            <ArrowUp className="h-4 w-4" />
                         )}
                     </Button>
                 </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                    Enter to send · the assistant only reads this note
+                </p>
             </div>
         </div>
     );

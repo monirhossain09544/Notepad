@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -52,7 +53,7 @@ import { EditorToolbar } from "./EditorToolbar";
 import { EmptyEditor } from "./EmptyStates";
 import { ColorPicker, FolderPicker, TagChips, TagPicker } from "./NoteMetaControls";
 import { useApp } from "../context/AppContext";
-import { agoTime, copyText, fullTime, noteTitle, readingTime } from "../lib/format";
+import { agoTime, copyText, fullTime, modKey, noteTitle, readingTime } from "../lib/format";
 
 const measure = (ed) => {
     const text = (ed?.getText?.({ blockSeparator: "\n" }) || "").replace(/\u00a0/g, " ");
@@ -297,14 +298,27 @@ export const NoteEditor = () => {
                         >
                             {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                         </Button>
-                        <Button
-                            onClick={() => setAiOpen(true)}
-                            data-testid="open-ai-btn"
-                            className="h-9 rounded-[10px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
-                        >
-                            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">Assistant</span>
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={() => setAiOpen(true)}
+                                    data-testid="open-ai-btn"
+                                    className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-border bg-[hsl(var(--surface-1))] pl-1.5 pr-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-[hsl(var(--surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+                                >
+                                    <span className="grid h-6 w-6 place-items-center rounded-[8px] bg-[hsl(var(--accent)/0.14)] text-[hsl(var(--accent))]">
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                    </span>
+                                    <span className="hidden sm:inline">Assist</span>
+                                    <kbd className="ml-0.5 hidden rounded-[6px] border border-border bg-[hsl(var(--surface-2))] px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground lg:inline">
+                                        {`${modKey()}E`}
+                                    </kbd>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                                Ask the assistant about this note
+                            </TooltipContent>
+                        </Tooltip>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button

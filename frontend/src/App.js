@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { ThemeProvider } from "next-themes";
 import { Menu, NotebookPen, PanelLeft, Plus, Sparkles, X } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
@@ -11,7 +11,7 @@ import { NoteList } from "./components/NoteList";
 import { NoteEditor } from "./components/NoteEditor";
 import { AIPanel } from "./components/AIPanel";
 import { CommandPalette } from "./components/CommandPalette";
-import { ShortcutsDialog, StatsDialog } from "./components/Dialogs";
+import { ShortcutsDialog } from "./components/Dialogs";
 import "./App.css";
 
 function Workspace() {
@@ -27,10 +27,11 @@ function Workspace() {
         activeId,
         activeNote,
         notes,
+        navOpen,
+        setNavOpen,
+        listOpen,
+        setListOpen,
     } = useApp();
-
-    const [navOpen, setNavOpen] = useState(false);
-    const [listOpen, setListOpen] = useState(false);
 
     useEffect(() => {
         const onKeyDown = (event) => {
@@ -176,7 +177,6 @@ function Workspace() {
 
             <CommandPalette />
             <ShortcutsDialog />
-            <StatsDialog />
         </div>
     );
 }

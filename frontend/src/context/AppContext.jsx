@@ -47,6 +47,8 @@ export function AppProvider({ children }) {
     const [saveStatus, setSaveStatus] = useState("idle");
     const [focusMode, setFocusMode] = useState(false);
     const [aiOpen, setAiOpen] = useState(false);
+    const [navOpen, setNavOpen] = useState(false);
+    const [listOpen, setListOpen] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
     const [statsOpen, setStatsOpen] = useState(false);
@@ -531,6 +533,15 @@ export function AppProvider({ children }) {
         [updateActive, loadMeta],
     );
 
+    /* The stats panel is anchored to the sidebar footer, so make sure the sidebar
+       is actually on screen before opening it (mobile sheet / focus mode). */
+    const revealStats = useCallback(() => {
+        const needsSheet = window.innerWidth < 1024;
+        setFocusMode(false);
+        if (needsSheet) setNavOpen(true);
+        setTimeout(() => setStatsOpen(true), needsSheet ? 320 : 40);
+    }, []);
+
     const value = useMemo(
         () => ({
             notes,
@@ -555,6 +566,11 @@ export function AppProvider({ children }) {
             setFocusMode,
             aiOpen,
             setAiOpen,
+            navOpen,
+            setNavOpen,
+            listOpen,
+            setListOpen,
+            revealStats,
             paletteOpen,
             setPaletteOpen,
             shortcutsOpen,
@@ -604,6 +620,9 @@ export function AppProvider({ children }) {
             saveStatus,
             focusMode,
             aiOpen,
+            navOpen,
+            listOpen,
+            revealStats,
             paletteOpen,
             shortcutsOpen,
             statsOpen,

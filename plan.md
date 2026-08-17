@@ -174,6 +174,18 @@
   - `id`, `note_id`, `role` (user|assistant), `content`, `created_at`
 
 ## 5. Next Actions
+
+### Phase 2.1 — UI refinement round (COMPLETE, requested by user)
+User feedback: the theme switch, the writing-stats popup and the assistant button/panel looked "ugly and AI made".
+Redesigned per a focused design_agent blueprint (/app/design_guidelines.md):
+- **Sidebar footer**: one unified utility bar — icon-only Writing stats + Keyboard shortcuts buttons (with tooltips) and a compact 2-up segmented Sun/Moon theme control with a sliding thumb (`.np-seg` CSS, `data-mode` drives the transform). New testids: `theme-light-btn`, `theme-dark-btn` (group keeps `theme-toggle`).
+- **Writing stats**: centred Dialog with six identical boxes → Popover anchored to the footer stats button. Editorial hierarchy: hero words number in Fraunces + estimated reading time, then hairline definition rows (Active/Pinned/Archived/In trash/Folders/Tags) with tabular numerals, then an honest stacked composition bar (active/archived/trash) with a legend. Reachable from the command palette via `revealStats()` which leaves focus mode and opens the sidebar sheet on narrow screens.
+- **Assistant entry**: solid teal CTA → quiet bordered button with an accent-tinted Sparkles chip, "Assist" label and a ⌘/Ctrl E kbd hint + tooltip.
+- **Assistant panel**: 2×3 button grid → grouped action list (Rewrite / Extract / Organise) with icon chips and hover chevrons, tone select inlined into the Rewrite group, results rendered as accent-rail "message" surfaces with quiet copy/retry icon buttons and one primary apply action, an accent scanline + pulsing dots thinking state (`.np-scanline`), header status dot (Ready / Thinking), user prompts as quiet right-aligned blocks with assistant prose replies, and a rounded composer with an ArrowUp send button.
+- `navOpen`/`listOpen` moved from App.js local state into AppContext.
+- Regression tested (testing agent iteration_2): 40/40 frontend checks passed, zero UI/integration/design issues.
+
+### Remaining ideas
 1. (Optional) Phase 3 kickoff: pagination + virtualization to support very large workspaces.
 2. (Optional) Add AI rewrite preview/diff + one-click undo; add streaming for rewrite actions.
 3. Add templates + backlinks if desired.

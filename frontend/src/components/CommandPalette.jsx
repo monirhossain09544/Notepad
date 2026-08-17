@@ -37,7 +37,7 @@ export const CommandPalette = () => {
         setFocusMode,
         focusMode,
         setShortcutsOpen,
-        setStatsOpen,
+        revealStats,
         setAiOpen,
         activeId,
     } = useApp();
@@ -93,7 +93,7 @@ export const CommandPalette = () => {
                         {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                         Switch to {theme === "dark" ? "light" : "dark"} mode
                     </CommandItem>
-                    <CommandItem onSelect={run(() => setStatsOpen(true))}>
+                    <CommandItem onSelect={run(revealStats)} data-testid="palette-stats">
                         <BarChart3 className="mr-2 h-4 w-4" /> Writing stats
                     </CommandItem>
                     <CommandItem onSelect={run(() => setShortcutsOpen(true))}>
