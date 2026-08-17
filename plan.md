@@ -185,6 +185,15 @@ Redesigned per a focused design_agent blueprint (/app/design_guidelines.md):
 - `navOpen`/`listOpen` moved from App.js local state into AppContext.
 - Regression tested (testing agent iteration_2): 40/40 frontend checks passed, zero UI/integration/design issues.
 
+### Phase 2.2 — Assistant UI rebuild (COMPLETE, requested by user)
+User follow-up: "assistant icons then all in assistant looks ugly... need organized perfect UI".
+- Removed the repeated teal icon chips; every action row now uses a **monochrome lucide icon** (Wand2, PenLine, SlidersHorizontal, AlignLeft, ListChecks, Type, Hash) at a consistent 16px, muted by default and turning foreground on hover, with a hover chevron.
+- Action rows are tighter (13px labels, 34px rows) inside a single bordered card, with the three groups separated by hairline dividers and small tracked-out section labels.
+- Tone control is no longer a wide select + separate button: the "Change tone" row runs the rewrite and a **compact tone chip** (Professional / Casual / Concise / Confident / Academic) sits on its right.
+- Results render in a shared `Panel` surface (2px accent rail, uppercase label, quiet top-right Copy / Try-again icon buttons, one accent primary action + optional secondary).
+- Empty state simplified to a solid "Nothing running" block (dashed border removed); composer send button moved inside the input as a small round accent button; entry button icon chip flattened to a single accent Sparkles glyph.
+- Regression tested (testing agent iteration_3): 29/29 assistant checks passed, zero issues; workspace reset to a single clean welcome note afterwards.
+
 ### Remaining ideas
 1. (Optional) Phase 3 kickoff: pagination + virtualization to support very large workspaces.
 2. (Optional) Add AI rewrite preview/diff + one-click undo; add streaming for rewrite actions.

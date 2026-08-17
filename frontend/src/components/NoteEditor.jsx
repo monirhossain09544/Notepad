@@ -304,11 +304,9 @@ export const NoteEditor = () => {
                                     type="button"
                                     onClick={() => setAiOpen(true)}
                                     data-testid="open-ai-btn"
-                                    className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-border bg-[hsl(var(--surface-1))] pl-1.5 pr-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-[hsl(var(--surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+                                    className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-border bg-[hsl(var(--surface-1))] px-2.5 text-[13px] font-medium text-foreground transition-colors duration-200 hover:bg-[hsl(var(--surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
                                 >
-                                    <span className="grid h-6 w-6 place-items-center rounded-[8px] bg-[hsl(var(--accent)/0.14)] text-[hsl(var(--accent))]">
-                                        <Sparkles className="h-3.5 w-3.5" />
-                                    </span>
+                                    <Sparkles className="h-4 w-4 text-[hsl(var(--accent))]" />
                                     <span className="hidden sm:inline">Assist</span>
                                     <kbd className="ml-0.5 hidden rounded-[6px] border border-border bg-[hsl(var(--surface-2))] px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground lg:inline">
                                         {`${modKey()}E`}

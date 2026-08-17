@@ -1,23 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+    AlignLeft,
     ArrowUp,
     Check,
     ChevronRight,
     Copy,
     CornerDownLeft,
     Eraser,
-    Heading1,
+    Hash,
+    ListChecks,
     Loader2,
-    ListTodo,
     PenLine,
     RotateCcw,
-    Sparkles,
-    Tag as TagIcon,
-    TextQuote,
+    SlidersHorizontal,
+    Type,
     Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
@@ -44,18 +43,30 @@ const GROUPS = [
     {
         label: "Extract",
         items: [
-            { key: "summarize", label: "Summarise", Icon: TextQuote },
-            { key: "action-items", label: "Pull out action items", Icon: ListTodo },
+            { key: "summarize", label: "Summarise", Icon: AlignLeft },
+            { key: "action-items", label: "Action items", Icon: ListChecks },
         ],
     },
     {
         label: "Organise",
         items: [
-            { key: "title", label: "Suggest a title", Icon: Heading1 },
-            { key: "suggest-tags", label: "Suggest tags", Icon: TagIcon },
+            { key: "title", label: "Suggest a title", Icon: Type },
+            { key: "suggest-tags", label: "Suggest tags", Icon: Hash },
         ],
     },
 ];
+
+const rowClass =
+    "group flex items-center gap-2.5 rounded-[10px] px-2 py-2 text-left text-[13px] text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--surface-1))] disabled:pointer-events-none disabled:opacity-45";
+
+const iconClass =
+    "h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground";
+
+const primaryBtn =
+    "inline-flex h-8 items-center gap-1.5 rounded-[9px] bg-[hsl(var(--accent))] px-2.5 text-xs font-medium text-[hsl(var(--accent-foreground))] transition-colors duration-150 hover:bg-[hsl(var(--accent)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]";
+
+const secondaryBtn =
+    "inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-border bg-[hsl(var(--surface-2))] px-2.5 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]";
 
 const IconAction = ({ label, onClick, children }) => (
     <Tooltip>
@@ -64,7 +75,7 @@ const IconAction = ({ label, onClick, children }) => (
                 type="button"
                 aria-label={label}
                 onClick={onClick}
-                className="grid h-7 w-7 place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-2))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]"
+                className="grid h-7 w-7 place-items-center rounded-[8px] text-muted-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-2))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--surface-1))]"
             >
                 {children}
             </button>
@@ -75,19 +86,20 @@ const IconAction = ({ label, onClick, children }) => (
     </Tooltip>
 );
 
-const quietBtn =
-    "inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-border bg-[hsl(var(--surface-2))] px-2.5 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]";
-
-const accentBtn =
-    "inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-[hsl(var(--accent))] px-2.5 text-xs font-medium text-[hsl(var(--accent-foreground))] transition-colors duration-150 hover:bg-[hsl(var(--accent)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface-1))]";
-
-const Rail = ({ children, className = "", ...rest }) => (
+const Panel = ({ children, className = "", ...rest }) => (
     <div
-        className={`relative rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--surface-1))] px-4 py-3 shadow-[var(--shadow-sm)] before:absolute before:bottom-3 before:left-0 before:top-3 before:w-[2px] before:rounded-full before:bg-[hsl(var(--accent)/0.6)] ${className}`}
+        className={`relative overflow-hidden rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))] px-3.5 py-3 ${className}`}
         {...rest}
     >
+        <span className="absolute inset-y-3 left-0 w-[2px] rounded-full bg-[hsl(var(--accent)/0.55)]" />
         {children}
     </div>
+);
+
+const Label = ({ children }) => (
+    <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+        {children}
+    </p>
 );
 
 export const AIPanel = () => {
@@ -265,10 +277,10 @@ export const AIPanel = () => {
 
         if (action === "title") {
             return (
-                <Rail className="pr-16" data-testid="ai-result-title">
-                    <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                <Panel className="pr-16" data-testid="ai-result-title">
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
                         <IconAction
-                            label="Copy title"
+                            label="Copy"
                             onClick={async () => {
                                 await copyText(data.title || "");
                                 toast.success("Copied");
@@ -280,9 +292,9 @@ export const AIPanel = () => {
                             <RotateCcw className="h-3.5 w-3.5" />
                         </IconAction>
                     </div>
-                    <p className="text-xs font-medium text-muted-foreground">Suggested title</p>
+                    <Label>Suggested title</Label>
                     <p
-                        className="mt-2 text-[17px] font-semibold leading-snug tracking-[-0.01em]"
+                        className="mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.01em]"
                         style={{ fontFamily: "var(--font-editor)" }}
                     >
                         {data.title}
@@ -291,7 +303,7 @@ export const AIPanel = () => {
                         <button
                             type="button"
                             data-testid="ai-apply-title-btn"
-                            className={accentBtn}
+                            className={primaryBtn}
                             onClick={() => {
                                 updateActive({ title: data.title }, { immediate: true });
                                 toast.success("Title applied");
@@ -300,7 +312,7 @@ export const AIPanel = () => {
                             <Check className="h-3.5 w-3.5" /> Use this title
                         </button>
                     </div>
-                </Rail>
+                </Panel>
             );
         }
 
@@ -308,8 +320,8 @@ export const AIPanel = () => {
             const items = action === "summarize" ? data.bullets || [] : data.items || [];
             const heading = action === "summarize" ? "Summary" : "Action items";
             return (
-                <Rail className="pr-16" data-testid={`ai-result-${action}`}>
-                    <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                <Panel className="pr-16" data-testid={`ai-result-${action}`}>
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
                         <IconAction
                             label="Copy"
                             onClick={async () => {
@@ -323,16 +335,16 @@ export const AIPanel = () => {
                             <RotateCcw className="h-3.5 w-3.5" />
                         </IconAction>
                     </div>
-                    <p className="text-xs font-medium text-muted-foreground">{heading}</p>
+                    <Label>{heading}</Label>
                     {items.length === 0 ? (
-                        <p className="mt-2 text-sm text-muted-foreground">
+                        <p className="mt-2 text-[13px] text-muted-foreground">
                             Nothing to pull out of this note yet.
                         </p>
                     ) : (
                         <ul className="mt-2 space-y-1.5">
                             {items.map((item, i) => (
-                                <li key={i} className="flex gap-2.5 text-sm leading-relaxed">
-                                    <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-[hsl(var(--accent))]" />
+                                <li key={i} className="flex gap-2.5 text-[13px] leading-relaxed">
+                                    <span className="mt-[8px] h-1 w-1 shrink-0 rounded-full bg-[hsl(var(--accent))]" />
                                     <span>{item}</span>
                                 </li>
                             ))}
@@ -343,7 +355,7 @@ export const AIPanel = () => {
                             <button
                                 type="button"
                                 data-testid={`ai-insert-${action}-btn`}
-                                className={accentBtn}
+                                className={primaryBtn}
                                 onClick={() =>
                                     insertAtEnd(
                                         action === "summarize"
@@ -357,28 +369,29 @@ export const AIPanel = () => {
                             </button>
                         </div>
                     )}
-                </Rail>
+                </Panel>
             );
         }
 
         if (action === "suggest-tags") {
             const suggested = data.tags || [];
             return (
-                <Rail className="pr-16" data-testid="ai-result-suggest-tags">
-                    <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                <Panel className="pr-12" data-testid="ai-result-suggest-tags">
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
                         <IconAction label="Try again" onClick={retry}>
                             <RotateCcw className="h-3.5 w-3.5" />
                         </IconAction>
                     </div>
-                    <p className="text-xs font-medium text-muted-foreground">Suggested tags</p>
+                    <Label>Suggested tags</Label>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                         {suggested.map((name) => (
                             <button
                                 key={name}
                                 type="button"
                                 onClick={() => applyTags([name])}
-                                className="rounded-full border border-border bg-[hsl(var(--surface-2))] px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-[hsl(var(--surface-3))]"
+                                className="inline-flex items-center gap-1 rounded-full border border-border bg-[hsl(var(--surface-2))] px-2.5 py-1 text-xs text-foreground transition-colors duration-150 hover:bg-[hsl(var(--surface-3))]"
                             >
+                                <Hash className="h-3 w-3 text-muted-foreground" />
                                 {name}
                             </button>
                         ))}
@@ -388,14 +401,14 @@ export const AIPanel = () => {
                             <button
                                 type="button"
                                 data-testid="ai-apply-tags-btn"
-                                className={accentBtn}
+                                className={primaryBtn}
                                 onClick={() => applyTags(suggested)}
                             >
                                 <Check className="h-3.5 w-3.5" /> Add them all
                             </button>
                         </div>
                     )}
-                </Rail>
+                </Panel>
             );
         }
 
@@ -407,15 +420,15 @@ export const AIPanel = () => {
               ? `Rewritten · ${data.tone || tone}`
               : "Improved draft";
         return (
-            <Rail className="pr-16" data-testid={`ai-result-${action}`}>
-                <div className="absolute right-2 top-2 flex items-center gap-0.5">
+            <Panel className="pr-12" data-testid={`ai-result-${action}`}>
+                <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
                     <IconAction label="Try again" onClick={retry}>
                         <RotateCcw className="h-3.5 w-3.5" />
                     </IconAction>
                 </div>
-                <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                <Label>{label}</Label>
                 <div
-                    className="note-prose thin-scroll mt-2 max-h-60 overflow-y-auto pr-1"
+                    className="note-prose thin-scroll mt-2 max-h-56 overflow-y-auto pr-1"
                     dangerouslySetInnerHTML={{ __html: html }}
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -423,7 +436,7 @@ export const AIPanel = () => {
                         <button
                             type="button"
                             data-testid="ai-insert-continue-btn"
-                            className={accentBtn}
+                            className={primaryBtn}
                             onClick={() => insertAtEnd(html)}
                         >
                             <CornerDownLeft className="h-3.5 w-3.5" /> Add to note
@@ -433,14 +446,14 @@ export const AIPanel = () => {
                             <button
                                 type="button"
                                 data-testid="ai-replace-note-btn"
-                                className={accentBtn}
+                                className={primaryBtn}
                                 onClick={() => replaceAll(html)}
                             >
                                 <Check className="h-3.5 w-3.5" /> Replace note
                             </button>
                             <button
                                 type="button"
-                                className={quietBtn}
+                                className={secondaryBtn}
                                 onClick={() => insertAtEnd(html)}
                             >
                                 Append instead
@@ -448,7 +461,7 @@ export const AIPanel = () => {
                         </>
                     )}
                 </div>
-            </Rail>
+            </Panel>
         );
     };
 
@@ -463,13 +476,13 @@ export const AIPanel = () => {
                 </div>
                 <span
                     role="status"
-                    className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
+                    className="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground"
                 >
                     <span
                         className={`h-1.5 w-1.5 rounded-full ${
                             thinking || streaming
                                 ? "animate-pulse bg-[hsl(var(--accent))]"
-                                : "bg-[hsl(var(--muted-foreground)/0.45)]"
+                                : "bg-[hsl(var(--muted-foreground)/0.4)]"
                         }`}
                     />
                     {thinking || streaming ? "Thinking" : "Ready"}
@@ -477,112 +490,112 @@ export const AIPanel = () => {
             </div>
 
             <div className="thin-scroll min-h-0 flex-1 overflow-y-auto">
-                <div className="px-4 pt-4">
-                    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[hsl(var(--surface-1))] py-1.5 shadow-[var(--shadow-sm)]">
-                        {GROUPS.map((group) => (
-                            <div key={group.label} className="pb-1">
-                                <p className="px-3.5 pb-1 pt-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                <div className="px-3.5 pt-3.5">
+                    <div className="overflow-hidden rounded-[var(--radius-md)] border border-border bg-[hsl(var(--surface-1))]">
+                        {GROUPS.map((group, gi) => (
+                            <div
+                                key={group.label}
+                                className={gi > 0 ? "border-t border-border" : ""}
+                            >
+                                <p className="px-3 pb-0.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                                     {group.label}
                                 </p>
-                                {group.items.map(({ key, label, Icon }) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        disabled={thinking}
-                                        data-testid={`ai-action-${key}`}
-                                        onClick={() => runAction(key)}
-                                        className="group mx-1.5 flex w-[calc(100%-12px)] items-center gap-3 rounded-[12px] px-2 py-2 text-left text-sm transition-colors duration-150 hover:bg-[hsl(var(--surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--surface-1))] disabled:opacity-50"
-                                    >
-                                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[hsl(var(--accent)/0.12)] text-[hsl(var(--accent))]">
-                                            {busy === key ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Icon className="h-4 w-4" />
-                                            )}
-                                        </span>
-                                        <span className="min-w-0 flex-1 truncate">{label}</span>
-                                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-                                    </button>
-                                ))}
-                                {group.tone && (
-                                    <div className="mx-1.5 mt-1 flex items-center gap-2 rounded-[12px] bg-[hsl(var(--surface-2))] px-2 py-1.5">
-                                        <span className="pl-1 text-xs text-muted-foreground">
-                                            Tone
-                                        </span>
-                                        <Select value={tone} onValueChange={setTone}>
-                                            <SelectTrigger
-                                                className="h-7 flex-1 rounded-[9px] border-border bg-[hsl(var(--surface-1))] text-xs"
-                                                data-testid="ai-tone-select"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-popover">
-                                                {TONES.map((t) => (
-                                                    <SelectItem
-                                                        key={t.value}
-                                                        value={t.value}
-                                                        className="text-xs"
-                                                    >
-                                                        {t.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                <div className="px-1.5 pb-1.5">
+                                    {group.items.map(({ key, label, Icon }) => (
                                         <button
+                                            key={key}
                                             type="button"
                                             disabled={thinking}
-                                            data-testid="ai-action-tone"
-                                            onClick={() => runAction("tone", { tone })}
-                                            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[9px] border border-border bg-[hsl(var(--surface-1))] px-2 text-xs font-medium transition-colors duration-150 hover:bg-[hsl(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] disabled:opacity-50"
+                                            data-testid={`ai-action-${key}`}
+                                            onClick={() => runAction(key)}
+                                            className={`${rowClass} w-full`}
                                         >
-                                            {busy === "tone" ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                            {busy === key ? (
+                                                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[hsl(var(--accent))]" />
                                             ) : (
-                                                <Wand2 className="h-3 w-3" />
+                                                <Icon className={iconClass} />
                                             )}
-                                            Rewrite
+                                            <span className="min-w-0 flex-1 truncate">{label}</span>
+                                            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-70" />
                                         </button>
-                                    </div>
-                                )}
+                                    ))}
+
+                                    {group.tone && (
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                disabled={thinking}
+                                                data-testid="ai-action-tone"
+                                                onClick={() => runAction("tone", { tone })}
+                                                className={`${rowClass} min-w-0 flex-1`}
+                                            >
+                                                {busy === "tone" ? (
+                                                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[hsl(var(--accent))]" />
+                                                ) : (
+                                                    <SlidersHorizontal className={iconClass} />
+                                                )}
+                                                <span className="truncate">Change tone</span>
+                                            </button>
+                                            <Select value={tone} onValueChange={setTone}>
+                                                <SelectTrigger
+                                                    data-testid="ai-tone-select"
+                                                    aria-label="Tone"
+                                                    className="h-7 w-auto shrink-0 gap-1 rounded-[8px] border-0 bg-[hsl(var(--surface-2))] px-2 text-[11px] font-medium text-muted-foreground focus:ring-0 focus:ring-offset-0"
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent align="end" className="bg-popover">
+                                                    {TONES.map((t) => (
+                                                        <SelectItem
+                                                            key={t.value}
+                                                            value={t.value}
+                                                            className="text-xs"
+                                                        >
+                                                            {t.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="px-4 pt-3">
+                <div className="px-3.5 pt-3">
                     {thinking ? (
-                        <Rail className="np-scanline">
-                            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                                <Sparkles className="mr-1 h-3.5 w-3.5 text-[hsl(var(--accent))]" />
+                        <Panel className="np-scanline">
+                            <Label>Working</Label>
+                            <p className="mt-1.5 flex items-center gap-1 text-[13px] text-muted-foreground">
                                 Reading your note
                                 <span className="dot-1">.</span>
                                 <span className="dot-2">.</span>
                                 <span className="dot-3">.</span>
                             </p>
-                            <div className="mt-2.5 space-y-2">
+                            <div className="mt-2.5 space-y-1.5">
                                 <span className="block h-2 w-full rounded-full bg-[hsl(var(--surface-3))]" />
                                 <span className="block h-2 w-4/5 rounded-full bg-[hsl(var(--surface-3))]" />
                                 <span className="block h-2 w-2/3 rounded-full bg-[hsl(var(--surface-3))]" />
                             </div>
-                        </Rail>
+                        </Panel>
                     ) : (
                         renderResult() || (
-                            <div className="rounded-[var(--radius-lg)] border border-dashed border-border px-4 py-4">
-                                <p className="text-sm font-medium">Assistant, on standby</p>
-                                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                                    Run an action above, or ask anything about this note — answers
-                                    only ever use what is written here.
+                            <div className="rounded-[var(--radius-md)] bg-[hsl(var(--surface-2))] px-3.5 py-3">
+                                <p className="text-[13px] font-medium">Nothing running</p>
+                                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                                    Pick an action above, or ask a question — answers only ever use
+                                    what is written in this note.
                                 </p>
                             </div>
                         )
                     )}
                 </div>
 
-                <div className="px-4 pb-5 pt-5">
-                    <div className="flex items-center justify-between pb-1">
-                        <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                            Conversation
-                        </p>
+                <div className="px-3.5 pb-5 pt-5">
+                    <div className="flex items-center justify-between pb-1.5">
+                        <Label>Conversation</Label>
                         {messages.length > 0 && (
                             <button
                                 type="button"
@@ -596,7 +609,7 @@ export const AIPanel = () => {
                     </div>
                     <div data-testid="ai-chat-thread">
                         {messages.length === 0 && !streaming && (
-                            <p className="pt-1 text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                                 Nothing asked yet. Try “what did I decide here?”
                             </p>
                         )}
@@ -604,41 +617,41 @@ export const AIPanel = () => {
                             m.role === "user" ? (
                                 <div
                                     key={i}
-                                    className="ml-auto mt-3 max-w-[86%] rounded-[14px] border border-border bg-[hsl(var(--surface-2))] px-3 py-2 text-sm text-foreground"
+                                    className="ml-auto mt-2.5 max-w-[88%] rounded-[12px] border border-border bg-[hsl(var(--surface-2))] px-3 py-2 text-[13px] text-foreground"
                                 >
                                     {m.content}
                                 </div>
                             ) : (
-                                <Rail key={i} className="mt-3">
-                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                                <Panel key={i} className="mt-2.5">
+                                    <p className="whitespace-pre-wrap text-[13px] leading-relaxed">
                                         {m.content}
                                     </p>
-                                </Rail>
+                                </Panel>
                             ),
                         )}
                         {streaming && (
-                            <Rail className={`mt-3 ${streamText ? "" : "np-scanline"}`}>
+                            <Panel className={`mt-2.5 ${streamText ? "" : "np-scanline"}`}>
                                 {streamText ? (
-                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                                    <p className="whitespace-pre-wrap text-[13px] leading-relaxed">
                                         {streamText}
                                     </p>
                                 ) : (
-                                    <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <p className="flex items-center gap-1 text-[13px] text-muted-foreground">
                                         Looking through the note
                                         <span className="dot-1">.</span>
                                         <span className="dot-2">.</span>
                                         <span className="dot-3">.</span>
                                     </p>
                                 )}
-                            </Rail>
+                            </Panel>
                         )}
                         <div ref={chatEndRef} />
                     </div>
                 </div>
             </div>
 
-            <div className="border-t border-border bg-popover px-4 py-3">
-                <div className="flex items-center gap-2">
+            <div className="border-t border-border bg-popover px-3.5 py-3">
+                <div className="relative">
                     <Input
                         value={question}
                         placeholder="Ask about this note…"
@@ -646,21 +659,22 @@ export const AIPanel = () => {
                         disabled={streaming}
                         onChange={(e) => setQuestion(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && ask()}
-                        className="h-11 rounded-[14px] border-border bg-[hsl(var(--surface-1))] text-sm shadow-[inset_0_1px_0_hsl(var(--border))]"
+                        className="h-11 rounded-[12px] border-border bg-[hsl(var(--surface-1))] pr-12 text-[13px]"
                     />
-                    <Button
+                    <button
+                        type="button"
                         onClick={ask}
                         disabled={streaming || !question.trim()}
                         aria-label="Send question"
                         data-testid="ai-ask-btn"
-                        className="h-11 w-11 shrink-0 rounded-[14px] bg-[hsl(var(--accent))] p-0 text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
+                        className="absolute right-1.5 top-1.5 grid h-8 w-8 place-items-center rounded-[9px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] transition-colors duration-150 hover:bg-[hsl(var(--accent)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--popover))] disabled:opacity-40"
                     >
                         {streaming ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                             <ArrowUp className="h-4 w-4" />
                         )}
-                    </Button>
+                    </button>
                 </div>
                 <p className="mt-2 text-[11px] text-muted-foreground">
                     Enter to send · the assistant only reads this note

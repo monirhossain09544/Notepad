@@ -22,8 +22,8 @@ export const TAG_COLORS = [
 
 export const TONES = [
     { value: "professional", label: "Professional" },
-    { value: "casual", label: "Casual & friendly" },
-    { value: "concise", label: "Short & punchy" },
+    { value: "casual", label: "Casual" },
+    { value: "concise", label: "Concise" },
     { value: "confident", label: "Confident" },
     { value: "academic", label: "Academic" },
 ];
